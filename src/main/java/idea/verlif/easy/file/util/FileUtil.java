@@ -1,5 +1,6 @@
 package idea.verlif.easy.file.util;
 
+import idea.verlif.easy.file.EasyFileException;
 import idea.verlif.easy.file.page.FilePage;
 import idea.verlif.easy.file.page.FileQuery;
 
@@ -112,6 +113,15 @@ public class FileUtil {
     }
 
     public static void writeStringToFile(File file, String content, Charset charset, boolean append) {
+        if (!file.exists()) {
+            try {
+                if (!file.createNewFile()) {
+                    throw new EasyFileException("Cannot create file - " + file.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                throw new EasyFileException(e);
+            }
+        }
         try (BufferedWriter writer = new BufferedWriter(
                 new OutputStreamWriter(Files.newOutputStream(file.toPath()), charset))) {
             if (append) {
@@ -121,7 +131,7 @@ public class FileUtil {
             }
             writer.flush();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new EasyFileException(e);
         }
     }
 
@@ -167,8 +177,14 @@ public class FileUtil {
         return page;
     }
 
+    public static void copyFile(File source, String destPath, boolean cover) throws FileNotFoundException {
+        copyFile(source, new File(destPath), cover);
+    }
+
     /**
-     * 复制文件
+     * 复制文件。<br/>
+     * 源文件是文件时，目标文件类型是文件夹时复制源文件到文件夹下，名称相同；目标文件类型是文件时复制源文件到目标文件。<br/>
+     * 源文件是文件夹时，目标文件类型只能是文件夹。
      *
      * @param source 源文件
      * @param dest   目标文件
@@ -176,16 +192,26 @@ public class FileUtil {
      */
     public static void copyFile(File source, File dest, boolean cover) throws FileNotFoundException {
         if (!source.exists()) {
-            throw new FileNotFoundException();
+            throw new FileNotFoundException(source.getAbsolutePath());
         }
         File[] sChildren = source.listFiles();
+        // 文件复制
         if (sChildren == null) {
             if (!dest.exists() || cover) {
                 copyIt(source, dest);
             }
         } else {
-            for (File sChild : sChildren) {
-                autoCopyFile(sChild, dest, cover);
+            // 文件夹不存在时创建文件夹
+            if (!dest.exists() && !dest.mkdirs()) {
+                throw new EasyFileException("Cannot make directory - " + dest.getAbsolutePath());
+            }
+            // 文件夹则优先判断目标文件是否是文件夹
+            if (dest.isDirectory()) {
+                for (File sChild : sChildren) {
+                    autoCopyFile(sChild, dest, cover);
+                }
+            } else {
+                throw new EasyFileException("Cannot copy directory to a file!");
             }
         }
     }
@@ -193,7 +219,7 @@ public class FileUtil {
     private static void autoCopyFile(File source, File parentFile, boolean cover) {
         File[] sChildren = source.listFiles();
         File dest = new File(parentFile, source.getName());
-        // 文件
+        // 文件则直接进行复制
         if (sChildren == null) {
             if (!dest.exists() || cover) {
                 copyIt(source, dest);
@@ -209,14 +235,18 @@ public class FileUtil {
         }
     }
 
-    private static void copyIt(File source, File parentFile) {
+    private static void copyIt(File source, File targetFile) {
+        // 若目标文件是文件夹，则复制到此文件夹下
+        if (targetFile.isDirectory()) {
+            targetFile = new File(targetFile, source.getName());
+        }
         try (FileInputStream fis = new FileInputStream(source);
-             FileOutputStream fos = new FileOutputStream(parentFile);
+             FileOutputStream fos = new FileOutputStream(targetFile);
              FileChannel inputChannel = fis.getChannel();
              FileChannel outputChannel = fos.getChannel()) {
             outputChannel.transferFrom(inputChannel, 0, inputChannel.size());
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new EasyFileException(e);
         }
     }
 

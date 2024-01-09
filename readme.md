@@ -55,6 +55,17 @@ FileUtil.writeStringToFile(file, "Hello World！");
 System.out.println(FileUtil.readContentAsString(file));
 ```
 
+### 文件复制
+
+通过`FileUtil.copyFile`方法来复制文件或文件夹。
+
+```java
+File file = new File("test\\dir1\\a.txt");
+FileUtil.writeStringToFile(file, "Hello World！444");
+System.out.println(FileUtil.readContentAsString(file));
+FileUtil.copyFile(file.getParentFile(), "test\\dir2", true);
+```
+
 ## 功能
 
 - __子文件查询和搜索__

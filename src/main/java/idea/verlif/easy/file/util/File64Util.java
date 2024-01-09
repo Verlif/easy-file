@@ -31,13 +31,13 @@ public class File64Util {
      * @return Base64字符串
      */
     public static String toBase64(File file) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
-        byte[] buffer = new byte[(int) file.length()];
-        if (fis.read(buffer) == -1) {
-            return null;
+        try (FileInputStream fis = new FileInputStream(file)) {
+            byte[] buffer = new byte[(int) file.length()];
+            if (fis.read(buffer) == -1) {
+                return null;
+            }
+            return ENCODER.encode(buffer);
         }
-        fis.close();
-        return ENCODER.encode(buffer);
     }
 
     /**
@@ -48,9 +48,9 @@ public class File64Util {
      */
     public static void toFile(String base64Code, String targetPath) throws IOException {
         byte[] buffer = DECODER.decodeBuffer(base64Code);
-        FileOutputStream out = new FileOutputStream(targetPath);
-        out.write(buffer);
-        out.close();
+        try (FileOutputStream out = new FileOutputStream(targetPath)) {
+            out.write(buffer);
+        }
     }
 
     /**

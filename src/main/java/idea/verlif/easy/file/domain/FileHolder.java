@@ -140,6 +140,14 @@ public class FileHolder extends File {
         return new FileHolder(this, name);
     }
 
+    public FileHolder parent() {
+        File parentFile = getParentFile();
+        if (parentFile == null) {
+            return null;
+        }
+        return new FileHolder(parentFile);
+    }
+
     /**
      * 复制文件
      *
