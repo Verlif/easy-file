@@ -1,18 +1,15 @@
 package idea.verlif.easy.file.util;
 
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Base64;
 
 /**
  * @author Verlif
  */
 public class File64Util {
-
-    private static final BASE64Encoder ENCODER = new BASE64Encoder();
-    private static final BASE64Decoder DECODER = new BASE64Decoder();
-
     /**
      * 文件转Base64字符串
      *
@@ -36,7 +33,7 @@ public class File64Util {
             if (fis.read(buffer) == -1) {
                 return null;
             }
-            return ENCODER.encode(buffer);
+            return Base64.getEncoder().encodeToString(buffer);
         }
     }
 
@@ -47,7 +44,7 @@ public class File64Util {
      * @param targetPath 目标文件路径
      */
     public static void toFile(String base64Code, String targetPath) throws IOException {
-        byte[] buffer = DECODER.decodeBuffer(base64Code);
+        byte[] buffer = Base64.getDecoder().decode(base64Code);
         try (FileOutputStream out = new FileOutputStream(targetPath)) {
             out.write(buffer);
         }
